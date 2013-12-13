@@ -1,0 +1,26 @@
+/********** TINY MCE: FIXES **********/
+.wg .mceStatusbar { position: relative !important; }
+.wg #description_resize { bottom: 2px !important; position: absolute !important; top: auto !important; right: 0 !important; }
+.wg #editorcontainer textarea { width: 100%; }
+
+.wg #button_bar { margin: 20px 0 5px; }
+
+.wg hr { border: none; border-top: 1px solid #DFDFDF; border-bottom: 1px solid #FFF; }
+.wg p { position: relative; }
+.wg label.error { position: absolute; top: 15px; left: 1px; color: #fff; font-size: 12px; background-color: #D54E21; text-transform: uppercase; border: 1px solid #bb4118; padding: 4px 8px; white-space: pre; font-weight: bold; z-index: 2; border-radius: 3px; box-shadow: 0 0 2px #bb4118; text-shadow: 1px 1px #802709; opacity: 0.9; }
+
+.wg #map { width: 258px; height: 300px; }
+
+.wg .wp-list-table .column-store_code { width: 100px; }
+.wg .wp-list-table .column-state { width: 150px; }
+.wg .wp-list-table .column-city { width: 180px; }
+
+.wg .editor_box { margin-bottom: 20px; }
+.wg .mceIframeContainer { background-color: #FFF; }
+
+.wg #wp-description-media-buttons { margin-left: 80px; } 
+
+.wg .top_cat { line-height: 25px; }
+.wg .sub_cat { margin-left: 20px; }
+
+.wg .chkstyle { color: #d54e21; }
