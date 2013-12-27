@@ -26,7 +26,6 @@ function get_item_by_id($id) {
 	if(!empty($result)) { foreach($result as $r) { return $r; } }
 }
 
-
 /****************************************************/
 /*********************GET ITEMS******************/
 /****************************************************/
@@ -49,29 +48,44 @@ function render_list_table(){
 /****************************************************/
 /*********************SAVE ITEM******************/
 /****************************************************/
-function save_item($values) {
+function save_item($values, $file) {
+	require_once(ABSPATH . "wp-admin" . '/includes/image.php');
+	require_once(ABSPATH . "wp-admin" . '/includes/file.php');
+	require_once(ABSPATH . "wp-admin" . '/includes/media.php');
 	global $wpdb;
 	global $webgrain2;
-	$id =									$values['id'];
-	$title =								$values['title'];
-	$description =						$values['description'];
-	$url =								$values['url'];
-	$duration =							$values['duration'];
-	$price =								$values['price'];
-	$unlimited =				$values['unlimited'];
-
-	if($unlimited == 'on') { $unlimited = 1; } else { $unlimited = 0; }
+	
+	$cloud = $values['cloud'];
+	$cloudurl = $values['cloudurl'];
+	
+	if($cloud == "enabled" && $cloudurl) {
+		$url = $cloudurl;
+	} else {
+		$tempfile = $file['url'];
+		// required for wp_handle_upload() to upload the file
+		$upload_overrides = array( 'test_form' => FALSE );
+		$attachment = wp_handle_upload($tempfile, $upload_overrides);
+		$url = $attachment;
+	}
+	$urlkey =       uniqid('',TRUE);
+	$urlkey =       str_replace(".","",$urlkey); //unique id with more_entropy enabled -- removes "." from more entropy
+	$id =			$values['id'];
+	$title =		$values['title'];
+	$description =	$values['description'];
+	$duration =		$values['duration'];
+	$price =		$values['price'];
+	$memberprice =  $values['memberprice'];
 
 	//Setup data for database insert
 	if($id) {
 		$sql = "UPDATE " . $webgrain2->first_menu_table . "
-		SET title = '$title', description = '$description', url = '$url', duration = '$duration', price = '$price', unlimited = $unlimited
+		SET title = '$title', description = '$description', url = '$url', duration = '$duration', price = '$price', member_price = $memberprice
 		WHERE id = $id";
 		$wpdb->query($wpdb->prepare($sql, 0));
 	} else {
 		$sql = "INSERT INTO " . $webgrain2->first_menu_table . " 
-		(title, description, url, duration, price, unlimited) VALUES 
-		('$title', '$description', '$url', '$duration', '$price', $unlimited)";
+		(title, description, url, duration, price, urlkey, member_price) VALUES 
+		('$title', '$description', '$url', '$duration', '$price', '$urlkey', $memberprice)";
 		$wpdb->query($wpdb->prepare($sql, 0));
 		$id = $wpdb->insert_id;
 	}

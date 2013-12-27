@@ -2,9 +2,8 @@
 /* 
 Plugin Name: Webinars
 Description: Webinars plugin for Associated Employers
-Version: 1.0
-Author: Webgrain, Inc.
-Author URI: http://webgrain.net
+Version: 1.1
+Author: AE Development
 */
 
 date_default_timezone_set('America/Denver');
@@ -60,8 +59,8 @@ add_action('admin_menu', 'wg_menu2');
 function wg_menu2() {
 	global $webgrain2;
 	add_menu_page($webgrain2->main_tabname, $webgrain2->main_tabname, 'administrator', $webgrain2->main_handle, 'init_first_item2', get_settings('siteurl') . '/wp-content/plugins/webinars/' . $webgrain2->main_tabicon, 5);
-	add_submenu_page('wg-handle', $webgrain2->first_menu_title, $webgrain2->first_menu_title, 'administrator',($webgrain2->main_handle), 'init_first_item2');
-	add_submenu_page('wg-handle', $webgrain2->second_menu_title, $webgrain2->second_menu_title, 'administrator', $webgrain2->second_handle, 'init_second_item2');
+	add_submenu_page('wg-handle2', $webgrain2->first_menu_title, $webgrain2->first_menu_title, 'administrator',($webgrain2->main_handle), 'init_first_item2');
+	add_submenu_page('wg-handle2', $webgrain2->second_menu_title, $webgrain2->second_menu_title, 'administrator', ($webgrain2->second_handle), 'init_second_item2');
 }
 
 
@@ -81,21 +80,17 @@ function webinars_install () {
 	  description text DEFAULT NULL,
 	  url varchar(255) DEFAULT '' NOT NULL,
 	  duration varchar(255) DEFAULT '90' NOT NULL,
-	  price int(11) DEFAULT 0 NOT NULL,
+	  price int(11) DEFAULT '70' NOT NULL,
+	  member_price int(11) DEFAULT '45' NOT NULL,
 	  unlimited tinyint(1) DEFAULT 0 NOT NULL,
+	  urlkey varchar(255) DEFAULT '' NOT NULL,
 	  UNIQUE KEY id (id)
 	);
 	CREATE TABLE $code_table (
 	id int(11) NOT NULL AUTO_INCREMENT,
-	webinar_id int(11) NOT NULL,
+	urlkey int(11) NOT NULL,
 	transaction_id int(11) NOT NULL,
-	first varchar(255) NOT NULL,
-	last varchar(255) NOT NULL,
-	email varchar(255) NOT NULL,
-	total int(11) DEFAULT 0 NOT NULL,
-	title varchar(255) NOT NULL,
-	webinar_code varchar(255) NOT NULL,
-	expiration_date DATE DEFAULT NULL,
+	expiration DATE DEFAULT NULL,
 	UNIQUE KEY id (id)
 	);";
 

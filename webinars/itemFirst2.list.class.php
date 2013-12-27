@@ -5,7 +5,7 @@ function ItemFirstList2() {
 	$item = new ItemFirst2(); //Basic Functions
 	$item_functions = new ItemFirstModify2(); //Form Display for editing item
 
-	if(isset($_POST['Save'])) { $item->save_item($_POST); } //Saves item
+	if(isset($_POST['Save'])) { $item->save_item($_POST, $_FILES); } //Saves item
 	if(isset($_POST['Delete'])) { //Deletes item
 		$itm_id = $_POST['id'];
 		$itm = $item->get_item_by_id($itm_id);
