@@ -13,6 +13,8 @@ var discountDifference;
 var ccType;
 var gblerr;
 var freezeCart;
+var passkey;
+var transactionidgbl;
 
 $(document).ready(function() {
 	checkoutController.hideStatus();
@@ -98,6 +100,12 @@ function addToCart(itemkey) {
 	$(".cart-content").append('<li><label class="hidden-label uniqidlbl">' + i.urlkey + '</label>' + i.duration + " access to " + i.title + " for $" + i.price + '&nbsp;<button class="close removeFromCart" type="button" aria-hidden="true">&times;</button></li>'); //append this content to the shopping cart list.
 	$(".checkout-cart-content").append('<li><label class="hidden-label uniqidlbl">' + i.urlkey + '</label>' + i.duration + " access to " + i.title + " for $" + i.price + '</li>'); //append this content to the shopping cart list.
 	updateCartTotal();
+}
+
+function emptyCart() {
+	$.each(cart, function(key,value) {
+		removeFromCart($("li").find(".uniqidlbl:contains('" + value.urlkey +"')"));
+	});
 }
 
 function removeFromCart(x) {
@@ -215,11 +223,26 @@ function checkout () { //checkout function to provide directions to the checkout
 					checkoutController.status(70, "Transaction Approved. Creating Webinar Key...");
 					setTimeout(function() {
 						var c = checkoutController.addOrder(b.payment_id);
-					}, 500);
+						if(c.passkey) {
+							checkoutController.status("Order has been created. Sending email...");
+							setTimeout(function() {
+								passkey = c.passkey;
+								transactionidgbl = b.payment_id;
+								var d = checkoutController.sendEmail("neworder"); //send notification emails
+								if(d.success) {
+									checkoutController.success();	
+								} else {
+									checkoutController.error("There was a problem sending the notifications. There may be a problem with our server. Please try again later.");	
+								}
+							}, 1600);
+						} else {
+							checkoutController.error("There was a problem adding your order to our database. Our site may be experiencing issues.");	
+						}
+					}, 1200);
 				} else {
 					checkoutController.error("There was a problem processing your card. Please verify the information you have entered and retry.");	
 				}
-			}, 400);
+			}, 800);
 		} else {
 			checkoutController.error(gblerr);
 			return;
@@ -349,7 +372,43 @@ var checkoutController = {
 				'order_info': $("#pmt-cc-first-name").val() + " " + $("#pmt-cc-last-name").val() + "\n" + $("#pmt-address-line1").val() + " " + $("#pmt-address-line2").val() + "\n" + $("#pmt-address-city").val() + ", " + $("#pmt-address-state").val() + " " + $("#pmt-address-zipcode").val() + "\n"
 			},
 			success: function(data) {
-				results = data.success;
+				results = data;
+			}
+		});
+		return results;
+	},
+	sendEmail: function (type) {//type var expects a string according to the type of email sent. "neworder" will send an administrative email and new order notification. This allows us to build in more types to the php file without messing with this function
+		var results;
+		var i = freezeCart;
+		var o = new Array();
+		var p = new Array();
+		var e = moment().add('days', 90).format("YYYY/MM/DD");
+		$.each(i, function(key,value) { //create a humanized item list
+			o.push(value.duration + " day access to " + value.title);
+		});
+		$.each(i, function(key,value) { //create a humanized url list
+			p.push('<a href="http://www.associatedemployers.org/training/webinars/#' + value.urlkey + '">http://www.associatedemployers.org/training/webinars/#' + value.urlkey + '</a>');
+		});
+		var h = o.join("<br />"); //join with line breaks
+		var u = p.join("<br />"); //join with line breaks
+		$.ajax({
+			url: $(".ajaxlocation-sendmail").html(),
+			dataType: "json",
+			type: "POST",
+			async: false, //wait for function to complete before returning value
+			data: {
+				'type': type,
+				'email': $("#pmt-email").val(),
+				'firstname': $("#pmt-cc-first-name").val(),
+				'amount_total': amtTotal,
+				'expiration': e,
+				'item_list': h,
+				'url_list': u,
+				'passkey': passkey,
+				'transaction': transactionidgbl
+			},
+			success: function(data) {
+				results = data;	
 			}
 		});
 		return results;
@@ -358,18 +417,31 @@ var checkoutController = {
 		$(".progress-bar").removeClass("progress-bar-danger").show().animate({'width': progress+'%'},100);
 		$(".checkout-progress").html(msg).show();
 		$(".checkout-btns:visible").slideUp();
+		$("#paymentModal").find("input, select").prop('disabled', true);
 	},
 	error: function (msg) {
 		$(".progress-bar").addClass("progress-bar-danger").css('width','100%').show();
 		$(".checkout-progress").html(msg).show();
 		$(".checkout-btns").slideDown();
 		$(".complete-checkout").html("Retry");
+		$("#paymentModal").find("input, select").prop('disabled', false);
 	},
 	hideStatus: function () {
 		$(".progress-bar").hide();
 		$(".checkout-progress").empty().hide();
 		$(".checkout-btns").show();
+		$("#paymentModal").find("input, select").prop('disabled', false);
 		$(".complete-checkout").html("Purchase");
+	},
+	success: function () {
+		$("#paymentModal").modal("hide");
+		checkoutController.hideStatus();
+		emptyCart();
+		updateCartTotal();
+		cartToggle();
+		$("#successModal").find(".fill-in-name").html($("#pmt-cc-first-name").val());
+		$("#successModal").find(".fill-in-expiration").html(moment().add('days', 90).format("YYYY/MM/DD"));
+		$("#successModal").appendTo("body").modal("show");
 	}
 }
 
@@ -401,7 +473,7 @@ function emailValidation (x) {
 }
 
 /****************************
-local ajax calls
+local independent ajax calls
 *****************************/
 function isAEMember(v) {
 	$.ajax({
