@@ -9,17 +9,17 @@ if(!class_exists('WP_List_Table')) { require_once(ABSPATH . 'wp-admin/includes/c
 class itemSecond_table2 extends WP_List_Table { 
 	function get_columns(){ 
 		//MODIFY: Add in column names you want to display
-		return array('id' => 'ID', 'title' => 'Webinar Title', 'transaction_id' => 'Transaction', 'first' => 'First', 'last' => 'Last', 'email' => 'Email', 'total' => 'Total', 'webinar_code' => 'Code', 'expiration_date' => 'Expires');
+		return array('id' => 'ID', 'orderinfo' => 'Customer Information', 'transaction_id' => 'Paypal Transaction ID', 'email' => 'Email Address', 'expiration' => 'Access Expiration', 'accesstourlkey' => 'Order Access URLs', 'webinarpass' => 'Webinars Passkey', 'total' => 'Order Total');
 	}
 
 
-	function column_title($item) { 
+	function column_orderinfo($item) { 
 		//MODIFY: Adjust column name in function to the column that has the row actions
 		$actions = array(
 			'edit' => sprintf('<a href="?page=%s&edit=%s">Edit</a>', $_REQUEST['page'], $item['id']),
 			'delete' => sprintf('<a href="?page=%s&delete=%s">Delete</a>', $_REQUEST['page'], $item['id'])
 		);
-		return sprintf('%1$s %2$s', $item['title'], $this->row_actions($actions));
+		return sprintf('%1$s %2$s', $item['orderinfo'], $this->row_actions($actions));
 	}
 
 
@@ -35,10 +35,13 @@ class itemSecond_table2 extends WP_List_Table {
 		if(isset($_POST['s'])) {
 			//MODIFY: Add in extra columns if wanted in the search
 			$term = $_POST['s'];
-			$search = " WHERE webinar_id LIKE '%$term%' 
-								OR webinar_code LIKE '%$term%'
-								OR expiration_date LIKE '%$term%'
-								OR transaction_id LIKE '%$term%'";
+			$search = " WHERE id LIKE '%$term%' 
+								OR orderinfo LIKE '%$term%'
+								OR transaction_id LIKE '%$term%'
+								OR accesstourlkey LIKE '%$term%'
+								OR webinarpass LIKE '%$term%'
+								OR total LIKE '%$term%'
+								OR email LIKE '%$term%'";
 		}
 
 		//MODIFY: Add columns that we want data from
@@ -48,16 +51,15 @@ class itemSecond_table2 extends WP_List_Table {
 		foreach($result as $r) {
 			//MODIFY: Setup data for row insert. Add new columns if needed or do sub queries here
 			$id = $r->id;
-			$title = $r->title;
+			$orderinfo = $r->orderinfo;
 			$transaction_id = $r->transaction_id;
-			$first = $r->first;
-			$last = $r->last;
 			$email = $r->email;
+			$expiration = $r->expiration;
+			$accesstourlkey = $r->accesstourlkey;
+			$webinarpass = $r->webinarpass;
 			$total = $r->total;
-			$webinar_code = $r->webinar_code; 
-			$expiration_date = $r->expiration_date;
 
-			$data_array = array('id' => $id, 'title' => $title, 'transaction_id' => $transaction_id, 'first' => $first, 'last' => $last, 'email' => $email, 'total' => $total, 'webinar_code' => $webinar_code, 'expiration_date' => $expiration_date);
+			$data_array = array('id' => $id, 'orderinfo' => $orderinfo, 'transaction_id' => $transaction_id, 'email' => $email, 'expiration' => $expiration, 'accesstourlkey' => $accesstourlkey, 'webinarpass' => $webinarpass, 'total' => $total);
 			array_push($column_array, $data_array);
 		}
 
@@ -69,14 +71,12 @@ class itemSecond_table2 extends WP_List_Table {
 		//MODIFY: Add columns that are sortable
 		$sortable_columns = array(
 			'id' => array('id', false),
-			'title' => array('title', false),
 			'transaction_id' => array('transaction_id', false),
-			'first' => array('first', false),
-			'last' => array('last', false),
 			'email' => array('email', false),
-			'total' => array('total', false),
-			'webinar_code' => array('webinar_code', false),
-			'expiration_date' => array('expiration_date', false)
+			'expiration' => array('expiration', false),
+			'accesstourlkey' => array('accesstourlkey', false),
+			'webinarpass' => array('webinarpass', false),
+			'total' => array('total', false)
 		);
 		return $sortable_columns;
 	}
@@ -102,25 +102,20 @@ class itemSecond_table2 extends WP_List_Table {
 		//MODIFY: Add column names from get_columns()
 		switch($column_name) {
 			case 'id':
-			case 'title':
+			case 'orderinfo':
+				return $item[$column_name];
 			case 'transaction_id':
-				return $item[$column_name];
-			case 'first':
-				return $item[$column_name];
-			case 'last':
 				return $item[$column_name];
 			case 'email':
 				return $item[$column_name];
+			case 'expiration':
+				return $item[$column_name];
+			case 'accesstourlkey':
+				return $item[$column_name];
+			case 'webinarpass':
+				return $item[$column_name];
 			case 'total':
 				return $item[$column_name];
-			case 'webinar_code':
-				return $item[$column_name];
-			case 'expiration_date': {
-				if($item[$column_name] == NULL)
-					return 'unlimited';
-				else
-	 				return $item[$column_name];
-			}
 			default:
 				return print_r($item, true) ; 
 		}

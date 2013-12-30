@@ -29,23 +29,19 @@ jQuery(document).ready(function() {
 			</div></div>
 		</div>
 	</div></div>
-
 	<div class="has-sidebar" id="post-body"><div class="has-sidebar-content" id="post-body-content"><div class="meta-box-sortables ui-sortable" id="normal-sortables">
 		<div class="postbox">
-			<div title="Click to toggle" class="handlediv"><br /></div><h3 class="hndle"><span>Details <?php if($item) { echo 'for order '.$itm->transaction_id.' webinar '.$itm->title;}?></span></h3>
+			<div title="Click to toggle" class="handlediv"><br /></div><h3 class="hndle"><span>Details <?php if($item) { echo 'for order '.$itm->transaction_id;}?></span></h3>
 			<div class="inside">
-				<p><input type="text" size="60" id="first" name="first" value="<?php if($item) { echo $itm->first; } ?>" /><br/><label for="first"><b>First Name</b></label></p>
-				<p><input type="text" size="60" id="last" name="last" value="<?php if($item) { echo $itm->last; } ?>" /><br/><label for="last"><b>Last Name</b></label></p>
-				<p><input type="email" size="60" id="email" name="email" value="<?php if($item) { echo $itm->email; } ?>" /><br/><label for="email"><b>Email</b></label></p>
-				<p>$<input type="text" size="59" id="total" name="total" value="<?php if($item) { echo $itm->total; } ?>" /><br/><label for="total"><b>Order Total</b></label></p>
-				<?php if($item) { ?><p><b>Webinar Access Code:</b> <?php echo $itm->webinar_code; ?></p><?php } ?>
-				<?php if($item) { ?><p><b>Expiration Date:</b> <?php if($itm->expiration_date != NULL) {echo $itm->expiration_date;} else {echo 'never';} ?></p><?php } ?>
+				<p><label for="orderinfo"><b>Order Information (Name, Address, City, State, Zip)</b></label><br /><textarea id="orderinfo" name="orderinfo" cols="50" rows="8"><?php if($item) { echo $itm->orderinfo; } ?></textarea></p>
+				<p><label for="email"><b>Email Address</b></label><br /><input type="text" id="email" name="email" value="<?php if($item) { echo $itm->email; } ?>" /></p>
+				<p><label for="expiration"><b>Expiration Date (Must be in this format: YYYY/MM/DD)</b></label><br /><input type="text" id="expiration" name="expiration" value="<?php if($item) { echo $itm->expiration; } ?>" /></p>
+				<p><label for="accesstourlkey"><b>Each Webinar URL The Order Has Access To **SEPARATED BY COMMAS**</b><br />(ex. "52b1bff796c4d443169121,52b47add92b03104601429" Will give access to the two URLs - NO QUOTES)</label><br /><textarea id="accesstourlkey" name="accesstourlkey" cols="20" rows="4"><?php if($item) { echo $itm->accesstourlkey; } ?></textarea></p>
+				<p><label for="webinarpass"><b>Passkey for Webinar</b></label><br /><input type="text" id="webinarpass" name="webinarpass" value="<?php if($item) { echo $itm->webinarpass; } ?>" /></p>
+				<p><label for="total"><b>Order Amount</b></label><br />$<input type="text" id="total" name="total" value="<?php if($item) { echo $itm->total; } ?>" /></p>
 			</div>
 		</div>
-	</div>
-
-
-	</div></div>
+	</div></div></div>
 </div>
 </form>
 <?php

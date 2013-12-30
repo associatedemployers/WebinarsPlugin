@@ -88,9 +88,13 @@ function webinars_install () {
 	);
 	CREATE TABLE $code_table (
 	id int(11) NOT NULL AUTO_INCREMENT,
-	urlkey int(11) NOT NULL,
-	transaction_id int(11) NOT NULL,
-	expiration DATE DEFAULT NULL,
+	accesstourlkey varchar(255) NOT NULL,
+	transaction_id varchar(255) NOT NULL,
+	expiration varchar(255) NOT NULL,
+	email varchar(255) NOT NULL,
+	total varchar(255) NOT NULL,
+	orderinfo varchar(255) NOT NULL,
+	webinarpass varchar(255) NOT NULL,
 	UNIQUE KEY id (id)
 	);";
 

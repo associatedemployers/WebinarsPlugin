@@ -1,7 +1,5 @@
 //JS File
 
-console.log("Script loaded successfully. ;) Let the awesomeness begin.");
-
 //global variables
 var lochash = (window.location.hash) ? window.location.hash : null;
 var nohashloc = (lochash) ? lochash.replace('#','') : null;
@@ -14,8 +12,10 @@ var amtTotal;
 var discountDifference;
 var ccType;
 var gblerr;
+var freezeCart;
 
 $(document).ready(function() {
+	checkoutController.hideStatus();
 	$(".memberpriceelement").tooltip({title: "AE member price is applied after entering your email in the checkout process"});
 	$(".webinar-list-item").webinarScroll(true); //webinar scroll first run
 	$(window).scroll(function() {$(".webinar-list-item").webinarScroll()});
@@ -24,6 +24,9 @@ $(document).ready(function() {
 	$("#toggleCart").click(function() {cartToggle()});
 	$("#checkout-button").click(function() {prepareModal()});
 	$(".webinar-search").keyup(function() {searchForWebinar($(this).val())}); //listen for the webinar search field
+	$("#payment-modal").on("hidden.bs.modal", function() {
+		checkoutController.hideStatus();
+	});
 	$("#pmt-email").keyup(function() {
 		if(kypTimeout) {clearTimeout(kypTimeout);} //clear the timeout if another key is pressed
 		var valid = emailValidation(this);
@@ -198,26 +201,68 @@ function processUserCheck () {
 	}
 }
 
-function checkout () {
+function checkout () { //checkout function to provide directions to the checkoutController object -- setTimeout is used as a hack to allow animations complete on progress bars. Fluid UI!
+	ccType = "";
+	freezeCart = cart; //Freeze cart on purchase click.
 	checkoutController.status(10, "Checking Billing Information...");
-	var a = checkoutController.validatePaymentForm();
-	if(a) {
-		checkoutController.status(40, "Preparing To Process Card...");
-	} else {
-		checkoutController.error(gblerr);
-		return;
-	}
-	
+	setTimeout(function() {
+		var a = checkoutController.validatePaymentForm();
+		if(a) {
+			checkoutController.status(40, "Processing your " + ccType + ". Please Wait....");
+			setTimeout(function() {
+				var b = checkoutController.processCard();	
+				if(b.state = "approved") {
+					checkoutController.status(70, "Transaction Approved. Creating Webinar Key...");
+					setTimeout(function() {
+						var c = checkoutController.addOrder(b.payment_id);
+					}, 500);
+				} else {
+					checkoutController.error("There was a problem processing your card. Please verify the information you have entered and retry.");	
+				}
+			}, 400);
+		} else {
+			checkoutController.error(gblerr);
+			return;
+		}
+	}, 400);
 }
 
 var checkoutController = {
 	processCard: function () {
-		
+		var resultData = ""; //default value
+		$.ajax({
+			url: $(".ajaxlocation-processpayment").html(),
+			dataType: "json",
+			type: "POST",
+			async: false, //wait for function to complete before returning value
+			data: {
+				'addrline1': $("#pmt-address-line1").val(),
+				'addrline2': $("#pmt-address-line2").val(),
+				'addrcity': $("#pmt-address-city").val(),
+				'addrzip': $("#pmt-address-zipcode").val(),
+				'addrstate': $("#pmt-address-state").val(),
+				'cardnumber': $("#pmt-cc-number").val(),
+				'cardtype': ccType,
+				'cardexpiremonth': $("#pmt-cc-expire-month").val(),
+				'cardexpireyear': $("#pmt-cc-expire-year").val(),
+				'cardcvv2': $("#pmt-cc-cvv2").val(),
+				'cardfirstname': $("#pmt-cc-first-name").val(),
+				'cardlastname': $("#pmt-cc-last-name").val(),
+				'amounttotal': amtTotal
+			},
+			success: function(data) {
+				if(data) {
+					resultData = data;
+				}
+			}
+		});
+		return resultData; //return the data
 	},
 	validatePaymentForm: function () {
 		var validationStack = "";
 		var emptyFields = false;
 		gblerr = "";
+		ccType = "";
 		$("#paymentModal").find(".validate").each(function(index, element) {
 			$(this).removeClass("invalid");
 			var v = $(this).val();
@@ -232,12 +277,40 @@ var checkoutController = {
 					error = true;
 				}
 			} else {
-				if(type == "phone") {
+				if(type == "email") {
 					var regex = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
 					if(!regex.test(v)) {
-						validationStack += "Please enter a valid email address.<br/>";	
+						validationStack += "Please enter a valid Email Address.<br/>";	
 						error = true;
 					}
+				} else if(type == "street") {
+					var regex = /^(\d{3,})\s?(\w{0,5})\s([a-zA-Z]{2,30})\s([a-zA-Z]{2,15})\.?\s?(\w{0,5})$/;
+					if(!regex.test(v)) {
+						validationStack += "Please enter a valid Street Address.<br/>";
+						error = true;	
+					}
+				} else if(type == "zipcode") {
+					if(v.length !== 5) {
+						validationStack += "Please enter a valid Zipcode.<br/>";
+						error = true;
+					}
+				} else if(type == "cvv2") {
+					v = v.length;
+					if(v<3 || v>4) {
+						validationStack += "Please enter a valid CVV2 #.<br/>";
+						error = true;	
+					}
+				} else if(type == "ccnumber") {
+					$("#pmt-cc-number").validateCreditCard(function(result) {
+						if(result.length_valid && result.luhn_valid) {
+							ccType = result.card_type.name;	
+						} else {
+							validationStack += "Please enter a valid Credit Card number.<br/>";
+							error = true;
+						}
+					},{ //credit card validation options
+						accept: ['visa', 'mastercard','discover','amex']
+					});
 				}
 			}
 			if(error) {
@@ -246,22 +319,57 @@ var checkoutController = {
 		});
 		if(validationStack) {
 			gblerr = validationStack; //set the global error for use in the checkout function
-			return false;	
+			return false;
 		} else {
 			return true;
 		}
 	},
-	status: function (progress, msg) {
+	addOrder: function (transact_id) {
+		var i = freezeCart;
+		var e = moment().add('days', 90).format("YYYY/MM/DD"); //set expiration 90 days from now
+		console.log("Expiration: " + e);
+		var results;
+		var o = new Array();
+		$.each(i, function(key,value) {
+			o.push(value.urlkey);
+		});
+		itemList = o.join(",");
+		console.log(transact_id);
+		$.ajax({
+			url: $(".ajaxlocation-addorder").html(),
+			dataType: "json",
+			type: "POST",
+			async: false, //wait for function to complete before returning value
+			data: {
+				'items': itemList,
+				'expiration': e,
+				'transaction_id': transact_id,
+				'email': $("#pmt-email").val(),
+				'total': amtTotal,
+				'order_info': $("#pmt-cc-first-name").val() + " " + $("#pmt-cc-last-name").val() + "\n" + $("#pmt-address-line1").val() + " " + $("#pmt-address-line2").val() + "\n" + $("#pmt-address-city").val() + ", " + $("#pmt-address-state").val() + " " + $("#pmt-address-zipcode").val() + "\n"
+			},
+			success: function(data) {
+				results = data.success;
+			}
+		});
+		return results;
+	},
+	status: function (progress, msg, pc) {
 		$(".progress-bar").removeClass("progress-bar-danger").show().animate({'width': progress+'%'},100);
 		$(".checkout-progress").html(msg).show();
+		$(".checkout-btns:visible").slideUp();
 	},
 	error: function (msg) {
 		$(".progress-bar").addClass("progress-bar-danger").css('width','100%').show();
 		$(".checkout-progress").html(msg).show();
+		$(".checkout-btns").slideDown();
+		$(".complete-checkout").html("Retry");
 	},
 	hideStatus: function () {
 		$(".progress-bar").hide();
 		$(".checkout-progress").empty().hide();
+		$(".checkout-btns").show();
+		$(".complete-checkout").html("Purchase");
 	}
 }
 
@@ -286,9 +394,9 @@ function emailValidation (x) {
 	if(regex.test(v)) {
 		return true;	
 	} else if(!v) {
-		return false;	
+		return false;
 	} else {
-		return false;	
+		return false;
 	}
 }
 
@@ -310,37 +418,3 @@ function isAEMember(v) {
 	});
 	return results;
 }
-
-function authToken() {
-	$.ajax({
-		url: $(".ajaxlocation-processpayment").html(),
-		contentType: "json",
-		type: "POST",
-		data: {
-			'addrline1': $("#pmt-address-line1").val(),
-			'addrline2': $("#pmt-address-line2").val(),
-			'addrcity': $("#pmt-address-city").val(),
-			'addrzip': $("#pmt-address-zipcode").val(),
-			'addrstate': $("#pmt-address-state").val(),
-			'cardnumber': $("#pmt-cc-number").val(),
-			'cardtype': ccType,
-			'cardexpiremonth': $("#pmt-cc-expire-month").val(),
-			'cardexpireyear': $("#pmt-cc-expire-year").val(),
-			'cardcvv2': $("#pmt-cc-cvv2").val(),
-			'cardfirstname': $("#pmt-cc-first-name").val(),
-			'cardlastname': $("#pmt-cc-last-name").val(),
-			'amountdetailsubtotal': amtTotal,
-			'amounttotal': amtTotal
-		},
-		success: function(data) {
-			if(data) {
-				console.log(data);
-			}
-		}
-	});
-}
-
-/*****************
-CC VALIDATION
-******************/
-(function(){var e,t=[].indexOf||function(e){for(var t=0,n=this.length;t<n;t++){if(t in this&&this[t]===e)return t}return-1};e=jQuery;e.fn.validateCreditCard=function(n,r){var i,s,o,u,a,f,l,c,h,p,d,v,m;o=[{name:"amex",pattern:/^3[47]/,valid_length:[15]},{name:"diners_club_carte_blanche",pattern:/^30[0-5]/,valid_length:[14]},{name:"diners_club_international",pattern:/^36/,valid_length:[14]},{name:"jcb",pattern:/^35(2[89]|[3-8][0-9])/,valid_length:[16]},{name:"laser",pattern:/^(6304|670[69]|6771)/,valid_length:[16,17,18,19]},{name:"visa_electron",pattern:/^(4026|417500|4508|4844|491(3|7))/,valid_length:[16]},{name:"visa",pattern:/^4/,valid_length:[16]},{name:"mastercard",pattern:/^5[1-5]/,valid_length:[16]},{name:"maestro",pattern:/^(5018|5020|5038|6304|6759|676[1-3])/,valid_length:[12,13,14,15,16,17,18,19]},{name:"discover",pattern:/^(6011|622(12[6-9]|1[3-9][0-9]|[2-8][0-9]{2}|9[0-1][0-9]|92[0-5]|64[4-9])|65)/,valid_length:[16]}];if(r==null){r={}}if((v=r.accept)==null){r.accept=function(){var e,t,n;n=[];for(e=0,t=o.length;e<t;e++){i=o[e];n.push(i.name)}return n}()}m=r.accept;for(p=0,d=m.length;p<d;p++){s=m[p];if(t.call(function(){var e,t,n;n=[];for(e=0,t=o.length;e<t;e++){i=o[e];n.push(i.name)}return n}(),s)<0){throw"Credit card type '"+s+"' is not supported"}}u=function(e){var n,u,a;a=function(){var e,n,s,u;u=[];for(e=0,n=o.length;e<n;e++){i=o[e];if(s=i.name,t.call(r.accept,s)>=0){u.push(i)}}return u}();for(n=0,u=a.length;n<u;n++){s=a[n];if(e.match(s.pattern)){return s}}return null};f=function(e){var t,n,r,i,s,o;r=0;o=e.split("").reverse();for(n=i=0,s=o.length;i<s;n=++i){t=o[n];t=+t;if(n%2){t*=2;if(t<10){r+=t}else{r+=t-9}}else{r+=t}}return r%10===0};a=function(e,n){var r;return r=e.length,t.call(n.valid_length,r)>=0};h=function(e){var t,r;s=u(e);r=false;t=false;if(s!=null){r=f(e);t=a(e,s)}return n({card_type:s,luhn_valid:r,length_valid:t})};c=function(){var t;t=l(e(this).val());return h(t)};l=function(e){return e.replace(/[ -]/g,"")};this.bind("input",function(){e(this).unbind("keyup");return c.call(this)});this.bind("keyup",function(){return c.call(this)});if(this.length!==0){c.call(this)}return this}}).call(this)

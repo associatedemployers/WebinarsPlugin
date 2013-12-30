@@ -9,7 +9,7 @@ if(!class_exists('WP_List_Table')) { require_once(ABSPATH . 'wp-admin/includes/c
 class itemFirst_table2 extends WP_List_Table { 
 	function get_columns(){ 
 		//MODIFY: Add in column names you want to display
-		return array('id' => 'ID', 'title' => 'Webinar Title', 'description' => 'Description', 'url' => 'URL', 'duration' => 'Duration', 'price' => 'Price', 'member_price' => 'Member Price');
+		return array('id' => 'ID', 'title' => 'Webinar Title', 'description' => 'Description', 'url' => 'URL', 'duration' => 'Duration', 'price' => 'Price', 'member_price' => 'Member Price', 'urlkey' => 'Access URL');
 	}
 
 
@@ -43,7 +43,7 @@ class itemFirst_table2 extends WP_List_Table {
 		}
 
 		//MODIFY: Add columns that we want data from
-		$sql = "SELECT id, title, description, url, duration, price, member_price FROM " . $webgrain2->first_menu_table . " " . $search . " " . $sort_column;
+		$sql = "SELECT id, title, description, url, duration, price, member_price, urlkey FROM " . $webgrain2->first_menu_table . " " . $search . " " . $sort_column;
 		$result = $wpdb->get_results($sql);
 
 		foreach($result as $r) {
@@ -55,14 +55,14 @@ class itemFirst_table2 extends WP_List_Table {
 			$duration = $r->duration . ' days';
 			$price = '$' . $r->price;
 			$memberprice = '$' . $r->member_price;
+			$urlkey = $r->urlkey;
 
-			$data_array = array('id' => $id, 'title'=>$title, 'description'=>$description, 'url'=>$url, 'duration'=>$duration, 'price'=>$price, 'member_price'=>$memberprice);
+			$data_array = array('id' => $id, 'title'=>$title, 'description'=>$description, 'url'=>$url, 'duration'=>$duration, 'price'=>$price, 'member_price'=>$memberprice, 'urlkey'=>$urlkey);
 			array_push($column_array, $data_array);
 		}
 
 		return $column_array;
 	}
-
 
 	function get_sortable_columns() {
 		//MODIFY: Add columns that are sortable
@@ -75,7 +75,6 @@ class itemFirst_table2 extends WP_List_Table {
 		);
 		return $sortable_columns;
 	}
-
 
 	function prepare_items() {
 		$columns = $this->get_columns();
@@ -92,7 +91,6 @@ class itemFirst_table2 extends WP_List_Table {
 		$this->items = $this->found_data;
 	}
 
-
 	function column_default($item, $column_name) {
 		//MODIFY: Add column names from get_columns()
 		switch($column_name) {
@@ -103,11 +101,11 @@ class itemFirst_table2 extends WP_List_Table {
 			case 'duration':
 			case 'price':
 			case 'member_price':
+			case 'urlkey':
 				return $item[$column_name];
 			default:
 				return print_r($item, true) ; 
 		}
 	}
 }
-
 ?>

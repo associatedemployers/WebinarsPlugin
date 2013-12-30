@@ -119,21 +119,27 @@ function render_list_table(){
 function save_item($values) {
 	global $wpdb;
 	global $webgrain2;
-	$id =									$values['id'];
-	$title =								$values['title'];
-	$email =								$values['email'];
-	$total =							$values['total'];
+	
+	$id = $values['id'];
+	$email = $values['email'];
+	$total = $values['total'];
+	$accesstourlkey = $values['accesstourlkey'];
+	$accesstourlkey = str_replace(" ", "",$accesstourlkey); //strip whitespace
+	$expiration = $values['expiration'];
+	$orderinfo = $values['orderinfo'];
+	$webinarpass = $values['webinarpass'];
+	$transaction_id = "Manual Order";
 
 	//Setup data for database insert
 	if($id) {
 		$sql = "UPDATE " . $webgrain2->second_menu_table . " SET 
-		title = '$title', description = '$description', short_description = '$short_description', note = '$note', price = '$price'
+		email = '$email', total = '$total', accesstourlkey = '$accesstourlkey', expiration = '$expiration', orderinfo = '$orderinfo', webinarpass = '$webinarpass'
 		WHERE id = $id";
 		$wpdb->query($wpdb->prepare($sql, 0));
 	} else {
 		$sql = "INSERT INTO " . $webgrain2->second_menu_table . " 
-		(title, description, short_description, note, price) VALUES 
-		('$title', '$description', '$short_description', '$note', '$price')";
+		(email, total, accesstourlkey, expiration, orderinfo, webinarpass, transaction_id) VALUES 
+		('$email', '$total', '$accesstourlkey', '$expiration', '$orderinfo', '$webinarpass', '$transaction_id')";
 		$wpdb->query($wpdb->prepare($sql, 0));
 		$id = $wpdb->insert_id;
 	}
