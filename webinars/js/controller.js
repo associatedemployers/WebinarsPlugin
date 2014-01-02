@@ -5,7 +5,6 @@ var lochash = (window.location.hash) ? window.location.hash : null;
 var nohashloc = (lochash) ? lochash.replace('#','') : null;
 var cart = null;
 var overrideScroll = false;
-var paypalAPIadr = "https://api.sandbox.paypal.com/"; //paypal API endpoint
 var kypTimeout;
 var memberStatus;
 var amtTotal;
@@ -19,9 +18,11 @@ var accountData;
 var hashChange;
 
 $(document).ready(function() {
+	ajaxStatus.hideit();
 	$(".footerBg").removeClass("sbar");
 	checkoutController.hideStatus();
 	$(".memberpriceelement").tooltip({title: "AE member price is applied after entering your email in the checkout process"});
+	$("#psk-transaction").tooltip({title: "We ask you for your transaction ID for extra security. Your transaction ID can be found in your order email near the total at the bottom."});
 	$(".webinar-list-item").webinarScroll(true); //webinar scroll first run
 	$(window).scroll(function() {$(".webinar-list-item").webinarScroll()});
 	$(".cartBtn").click(function() {webinarClickEvent($(this))});
@@ -29,6 +30,17 @@ $(document).ready(function() {
 	$("#toggleCart").click(function() {cartToggle();});
 	$("#checkout-button").click(function() {prepareModal()});
 	$(".webinar-search").keyup(function() {searchForWebinar($(this).val())}); //listen for the webinar search field
+	$(".change-psk").keyup(function(e) {
+		if($("#psk-current").val() && $("#psk-new").val() && $("#psk-transaction").val()) {
+			$("#change-psk-btn").prop("disabled", false);
+			if(e.keyCode == 13) {
+				account.pskChange();
+			}
+		} else {
+			$("#change-psk-btn").prop("disabled", true);
+		}
+	});
+	$("#change-psk-btn").click(function() {account.pskChange()});
 	$("#payment-modal").on("hidden.bs.modal", function() {
 		checkoutController.hideStatus();
 	});
@@ -52,7 +64,7 @@ $(document).ready(function() {
 	$(document.body).on('click', '.go-back-to-account', function() {account.populateOrderPage(); account.clearPages("video")}); //populate the order page.
 	$(window).on("hashchange", function () {
 		console.log("Detected hash change");
-		if(hashChange == true) {
+		if(hashChange === true) {
 			console.log("hashChange == true");
 			hashChange = false;
 		} else {
@@ -77,27 +89,57 @@ var account = { //object with functions
 		$("#video-page").slideDown();
 		hashChange = true;
 		window.location.hash = (video_id);
+		ajaxStatus.hideit();
 	},
 	populateOrderPage: function () {
 		overrideScroll = true; //hang the scroll function so no errors appear in the console
 		$(".page:not('#account-page')").hide();
 		$("#account-page").slideDown();
-		
 		var a = accountData.urlkey_list.split(",");
 		$.each(a, function(key, value) {
 			var d = webinarActions.getInfo(value);
-			$(".fill-in-expiration-fromnow").html(moment(accountData.expiration).fromNow());
-			$(".fill-in-expiration-date").html(accountData.expiration);
+			
 			$(".account-order-list").append('<button class="list-group-item account-list-item"><h4 class="list-group-item-heading">' + d.title + '</h4><strong><h5 class="list-group-item-heading">http://www.associatedemployers.org/training/webinars/#' + value + '</h5></strong><p class="list-group-item-text">' + d.description + '</p><label class="hidden-label list-uniqidlbl">' + value + '</label></button>');
 		});
+		$(".fill-in-expiration-fromnow").html(moment(accountData.expiration).fromNow());
+		$(".fill-in-expiration-date").html(accountData.expiration);
+		$(".order-info").html(accountData.order_info.replace("\n", "<br />"));
+		console.log("manual order check");
+		if(accountData.transaction == "Manual Order") {
+			console.log("Its a manual order");
+			$(".change-psk-body").html("We're sorry, passkey changes are unavailable for manual orders.");	
+		}
 		hashChange = true;
 		window.location.hash = ("order");
+		ajaxStatus.hideit();
 	},
 	clearPages: function (p) {
 		if(p == "order") {
 			$(".account-order-list").empty();
 		} else if(p == "video") {
 			$("#video-page").empty();
+		}
+	},
+	pskChange: function () {
+		if($("#psk-current").val() !== accountData.passkey) {
+			$(".psk-message").html("Invalid current passkey.");
+		} else if($("#psk-transaction").val() !== accountData.transaction) {
+			$(".psk-message").html("Invalid transaction ID.");
+		} else {
+			var result = login.changePassword();
+			if(result.success == true) {
+				var emailResult = login.sendPskEmail();
+				if(emailResult) {
+					$(".change-psk").val("");
+					$(".change-psk").prop("disabled",true);
+					$("#change-psk-btn").prop("disabled", true);
+					$(".psk-message").html("Passkey successfully changed. Please refresh the page to change again.");
+				} else {
+					$(".psk-message").html("There was a problem emailing your confirmation.");
+				}
+			} else {
+				$(".psk-message").html("There was a problem changing your passkey.");
+			}
 		}
 	}
 }
@@ -111,8 +153,6 @@ function updateHashVars() {
 }
 
 function checkHash() {
-	lochash = (window.location.hash) ? window.location.hash : null;
-	nohashloc = (lochash) ? lochash.replace('#','') : null;
 	console.log("Checking hash");
 	if(!lochash) {
 		console.log("hash is null");
@@ -123,6 +163,7 @@ function checkHash() {
 		overrideScroll = true; //hang the scroll function so no errors appear in the console
 		if(accountData) {
 			console.log("account data present");
+			ajaxStatus.showit();
 			account.populateOrderPage();
 		} else {
 			login.removeCloses(); //remove the close btns on the modal so user must login to close modal
@@ -134,6 +175,7 @@ function checkHash() {
 		if(accountData) {
 			console.log("account data present");
 			console.log(nohashloc);
+			ajaxStatus.showit();
 			account.populateVideoPage(nohashloc);
 		} else {
 			login.showModal(); //prepare the login modal
@@ -184,6 +226,7 @@ var login = {
 							login.checkExpirationLoop();
 							login.hideModal();
 							login.clearError();
+							ajaxStatus.showit();
 							accountData = data;
 							account.populateVideoPage(nohashloc);
 						} else {
@@ -193,6 +236,7 @@ var login = {
 						login.checkExpirationLoop();
 						login.hideModal();
 						login.clearError();
+						ajaxStatus.showit();
 						accountData = data;
 						account.populateOrderPage();
 					}
@@ -261,7 +305,52 @@ var login = {
 			if(moment().isAfter(accountData.expiration)) {
 				location.reload(true);
 			}
-		}, 1800000); //check expiration every 30 minutes to prevent loitering
+		}, 30*60000); //check expiration every 30 minutes to prevent loitering
+	},
+	sendPskEmail: function () {
+		var results;
+		$.ajax({
+			url: $(".ajaxlocation-sendmail").html(),
+			dataType: "json",
+			type: "POST",
+			async: false, //wait for function to complete before returning value
+			data: {
+				'type': "changepsk",
+				'email': accountData.email
+			},
+			success: function(data) {
+				results = data;
+			}
+		});
+		return results;
+	},
+	changePassword: function () {
+		var results;
+		$.ajax({
+			url: $(".ajaxlocation-changepsk").html(),
+			dataType: "json",
+			type: "POST",
+			async: false, //wait for function to complete before returning value
+			data: {
+				'email': accountData.email,
+				'psk_current': $("#psk-current").val(),
+				'psk_new': $("#psk-new").val(),
+				'transaction_id': $("#psk-transaction").val(),
+			},
+			success: function(data) {
+				results = data;
+			}
+		});
+		return results;
+	}
+}
+
+var ajaxStatus = {
+	showit: function() {
+		$(".loader").show();	
+	},
+	hideit: function() {
+		$(".loader").hide();	
 	}
 }
 
@@ -316,7 +405,7 @@ function removeFromCart(x) {
 	console.log(x);
 	x = x.parent("li");
 	var k = x.find(".uniqidlbl").html();
-	var z = $(".checkout-cart-content").find(".uniqidlbl").each(function(index, element) {
+	$(".checkout-cart-content").find(".uniqidlbl").each(function(index, element) {
 		if($(this).text().match(k)) {
 			$(this).parents("li").remove();	
 		}
@@ -423,7 +512,7 @@ function checkout () { //checkout function to provide directions to the checkout
 			checkoutController.status(40, "Processing your " + ccType + ". Please Wait....");
 			setTimeout(function() {
 				var b = checkoutController.processCard();	
-				if(b.state = "approved") {
+				if(b.state == "approved") {
 					checkoutController.status(70, "Transaction Approved. Creating Webinar Key...");
 					setTimeout(function() {
 						var c = checkoutController.addOrder(b.payment_id);
@@ -505,14 +594,14 @@ var checkoutController = {
 				}
 			} else {
 				if(type == "email") {
-					var regex = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
-					if(!regex.test(v)) {
+					var regex3 = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+					if(!regex3.test(v)) {
 						validationStack += "Please enter a valid Email Address.<br/>";	
 						error = true;
 					}
 				} else if(type == "street") {
-					var regex = /^(\d{3,})\s?(\w{0,5})\s([a-zA-Z]{2,30})\s([a-zA-Z]{2,15})\.?\s?(\w{0,5})$/;
-					if(!regex.test(v)) {
+					var regex2 = /^(\d{3,})\s?(\w{0,5})\s([a-zA-Z]{2,30})\s([a-zA-Z]{2,15})\.?\s?(\w{0,5})$/;
+					if(!regex2.test(v)) {
 						validationStack += "Please enter a valid Street Address.<br/>";
 						error = true;	
 					}

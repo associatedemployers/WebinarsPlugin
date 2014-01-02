@@ -28,6 +28,7 @@
 		'expiration' => $sqlresult->expiration, //row data
 		'urlkey_list' => $sqlresult->accesstourlkey, //row data
 		'order_info' => $sqlresult->orderinfo, //row data
+		'transaction' => $sqlresult->transaction_id,
 		'errors' => $error //collected errors
 	);
 	
