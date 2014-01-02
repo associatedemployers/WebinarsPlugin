@@ -63,12 +63,9 @@ $(document).ready(function() {
 	$(document.body).on('click', '.account-list-item', function() {account.populateVideoPage($(this).find(".list-uniqidlbl").text()); account.clearPages("order")}); //send uniqid to navigateToVideo function
 	$(document.body).on('click', '.go-back-to-account', function() {account.populateOrderPage(); account.clearPages("video")}); //populate the order page.
 	$(window).on("hashchange", function () {
-		console.log("Detected hash change");
 		if(hashChange === true) {
-			console.log("hashChange == true");
 			hashChange = false;
 		} else {
-			console.log("hashChange == false");
 			account.clearPages("order");
 			account.clearPages("video");
 			updateHashVars();
@@ -104,9 +101,7 @@ var account = { //object with functions
 		$(".fill-in-expiration-fromnow").html(moment(accountData.expiration).fromNow());
 		$(".fill-in-expiration-date").html(accountData.expiration);
 		$(".order-info").html(accountData.order_info.replace("\n", "<br />"));
-		console.log("manual order check");
 		if(accountData.transaction == "Manual Order") {
-			console.log("Its a manual order");
 			$(".change-psk-body").html("We're sorry, passkey changes are unavailable for manual orders.");	
 		}
 		hashChange = true;
@@ -145,24 +140,18 @@ var account = { //object with functions
 }
 
 function updateHashVars() {
-	console.log("Updating hash vars");
 	lochash = (window.location.hash) ? window.location.hash : null;
 	nohashloc = (lochash) ? lochash.replace('#','') : null;
-	console.log(lochash);
 	checkHash();
 }
 
 function checkHash() {
-	console.log("Checking hash");
 	if(!lochash) {
-		console.log("hash is null");
 		overrideScroll = false;
 		$("#webinar-list").slideDown();
 	} else if(lochash == "#order") {
-		console.log("hash is order");
 		overrideScroll = true; //hang the scroll function so no errors appear in the console
 		if(accountData) {
-			console.log("account data present");
 			ajaxStatus.showit();
 			account.populateOrderPage();
 		} else {
@@ -170,11 +159,8 @@ function checkHash() {
 			login.showModal();
 		}
 	} else {
-		console.log("hash is not order");
 		overrideScroll = true; //hang the scroll function so no errors appear in the console
 		if(accountData) {
-			console.log("account data present");
-			console.log(nohashloc);
 			ajaxStatus.showit();
 			account.populateVideoPage(nohashloc);
 		} else {
@@ -219,7 +205,6 @@ var login = {
 			if(data.urlkey_list) {
 				if(moment(data.expiration).isAfter()) { //use moment.js to check and see if expiration is before the current time. INFO: isAfter() returns current time.
 					if(nohashloc !== "order" && lochash) {
-						console.log("hash: " + nohashloc);
 						var regex = new RegExp('\\s'+nohashloc+'\\s');
 						var d = " " + data.urlkey_list.toString().replace(/,/g, " ") + " ";
 						if(regex.test(d)) { //make sure the url they are trying to access is in their list
@@ -369,14 +354,11 @@ function webinarClickEvent(x) { //handle add to cart event
 	}
 	var webinar = new Webinar(x); //triggering object sent with new Webinar request.
 	cart[webinar.urlkey] = (webinar); //use the url key as the id for the object inside the associative array
-	console.log(cart[webinar.urlkey].duration);
-	console.log(webinar.title);
 	x.html('Added to cart').addClass("added");
 	addToCart(webinar.urlkey);
 }
 
 function Webinar(x) { //Webinar constructor
-	console.log("creating webinar");
 	this.urlkey = x.parents("li").find(".uniqidlbl").attr("id");
 	this.price = x.parents("li").find(".price").html();
 	this.memberprice = x.parents("li").find(".memberprice").html();
@@ -401,8 +383,6 @@ function emptyCart() {
 }
 
 function removeFromCart(x) {
-	console.log("Removing from cart");
-	console.log(x);
 	x = x.parent("li");
 	var k = x.find(".uniqidlbl").html();
 	$(".checkout-cart-content").find(".uniqidlbl").each(function(index, element) {
@@ -410,7 +390,6 @@ function removeFromCart(x) {
 			$(this).parents("li").remove();	
 		}
 	});
-	console.log(k);
 	x.remove();
 	delete cart[k];
 	$("#" + k).parents("li").find(".cartBtn").removeClass("added").html("Add To Webinar Cart");
@@ -457,22 +436,18 @@ function cartBtnToggle() {
 }
 function searchForWebinar(v) { //live search function
 	$(".webinar-list-item").hide();	//hide while getting results
-	console.log("running search with value: " + v);
 	if(!v) {
-		console.log("value is empty");
 		overrideScroll = false; //don't override the scroll plugin
 		$(".webinar-list-item").webinarScroll(true);
 		clearSearchMsg();
 	} else {
 		var c = 0; //int count
-		console.log("value contains text, running");
 		$(".webinar-list-item").each(function(index, element) {
 			if($(this).text().toLowerCase().match(v.toLowerCase())) { //lowercase magic search here
 				$(this).show();
 				c++;
 			}
 		});
-		console.log(c);
 		if(c>0) {overrideScroll = true;  $("#search-msg").html(c + " Results Found.");} else {overrideScroll = false; $(".webinar-list-item").webinarScroll(true); $("#search-msg").html("No Search Results Found.").show();}
 	}
 }
@@ -488,7 +463,6 @@ function prepareModal () {
 function processUserCheck () {
 	var result = isAEMember($("#pmt-email").val());
 	if(result) {
-		console.log(result);
 		if(result.member) {
 			memberStatus = true;
 			$("#pmt-email").addClass("activemember").removeClass("nonmember");
@@ -643,14 +617,12 @@ var checkoutController = {
 	addOrder: function (transact_id) {
 		var i = freezeCart;
 		var e = moment().add('days', 90).format("YYYY/MM/DD"); //set expiration 90 days from now
-		console.log("Expiration: " + e);
 		var results;
 		var o = new Array();
 		$.each(i, function(key,value) {
 			o.push(value.urlkey);
 		});
 		itemList = o.join(",");
-		console.log(transact_id);
 		$.ajax({
 			url: $(".ajaxlocation-addorder").html(),
 			dataType: "json",
@@ -743,7 +715,6 @@ $.fn.webinarScroll = function(fr) { //custom write-up to handle webinar scrollin
 	if(overrideScroll) { return; }
 	var c = "." + $(this).attr("class");
 	if(fr) {
-		console.log(c);
 		$(c).hide();
 		$(c + ":lt(3)").fadeIn(100);
 	} else {
