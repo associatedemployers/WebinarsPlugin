@@ -15,15 +15,18 @@ var gblerr;
 var freezeCart;
 var passkey;
 var transactionidgbl;
+var accountData;
+var hashChange;
 
 $(document).ready(function() {
+	$(".footerBg").removeClass("sbar");
 	checkoutController.hideStatus();
 	$(".memberpriceelement").tooltip({title: "AE member price is applied after entering your email in the checkout process"});
 	$(".webinar-list-item").webinarScroll(true); //webinar scroll first run
 	$(window).scroll(function() {$(".webinar-list-item").webinarScroll()});
 	$(".cartBtn").click(function() {webinarClickEvent($(this))});
 	$(".complete-checkout").click(function() {checkout();});
-	$("#toggleCart").click(function() {cartToggle()});
+	$("#toggleCart").click(function() {cartToggle();});
 	$("#checkout-button").click(function() {prepareModal()});
 	$(".webinar-search").keyup(function() {searchForWebinar($(this).val())}); //listen for the webinar search field
 	$("#payment-modal").on("hidden.bs.modal", function() {
@@ -41,25 +44,225 @@ $(document).ready(function() {
 			updateCartTotal();
 		}
 	});
-	$(document.body).on('click', '.removeFromCart' ,function(){removeFromCart($(this))});
-	if(!lochash) {
-		$("#webinar-list").slideDown();
-		console.log("No loc hash detected!");
-	} else if ($("label").find(lochash)) {
-		populateLoginPage(nohashloc);
-		console.log("Hash detected and matched a uniqid!")
-	} else if (lochash) {
-		$("#webinar-list").slideDown();
-		appendError("Page not available. Please retry your selection or double-check the page you have navigated to.",true)
-	}
-	$(window).on('hashchange', function() {
-		$(".errorBox").hide();
+	$(".login-modal-btn").click(function() {login.showModal()});
+	$(".login-inputs").keyup(function(e) {if (e.keyCode == 13) {login.process()}}); // we check both enter and btn click to fire the process function
+	$(".login-btn").click(function() {login.process()}); //click listener
+	$(document.body).on('click', '.removeFromCart', function(){removeFromCart($(this))});
+	$(document.body).on('click', '.account-list-item', function() {account.populateVideoPage($(this).find(".list-uniqidlbl").text()); account.clearPages("order")}); //send uniqid to navigateToVideo function
+	$(document.body).on('click', '.go-back-to-account', function() {account.populateOrderPage(); account.clearPages("video")}); //populate the order page.
+	$(window).on("hashchange", function () {
+		console.log("Detected hash change");
+		if(hashChange == true) {
+			console.log("hashChange == true");
+			hashChange = false;
+		} else {
+			console.log("hashChange == false");
+			account.clearPages("order");
+			account.clearPages("video");
+			updateHashVars();
+		}
 	});
 	updateCartTotal(); //get this set before user sees default values.
+	checkHash();
 });
 
-function populateLoginPage(h) {
-	return;
+var account = { //object with functions
+	populateVideoPage: function (video_id) {
+		overrideScroll = true; //hang the scroll function so no errors appear in the console
+		$(".page:not('#video-page')").hide();
+		var d = webinarActions.getInfo(video_id);
+		var reg = new RegExp('(?:^|(?:\\.\\s))(\\w+)','g');
+		$("#video-page").html('<h1><span class="glyphicon glyphicon-play"></span> &nbsp;You are now watching ' + d.title + '.</h1><video id="webinar-video" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto" width="960" height="520"><source src="' + d.video + '" type="video/mp4">Sorry, we are using HTML5 video. Please update your browser to see this webinar. Try <a href="https://www.google.com/intl/en/chrome/browser/">Google Chrome</a></video><br /><br /><button type="button" class="btn btn-primary btn-lg btn-block go-back-to-account"><span class="glyphicon glyphicon-list"></span> &nbsp;Go Back to Order Overview</button><br /><p class="text-muted">Thanks for watching, ' + reg.exec(accountData.order_info) + ". Don't forget to like us on <a href='https://www.facebook.com/pages/Associated-Employers/197713060277021'>Facebook</a> or <a href='https://twitter.com/aehumanresource/'>@AEhumanresource</a>.</p>");
+		videojs("#webinar-video"); //init the videojs tag
+		$("#video-page").slideDown();
+		hashChange = true;
+		window.location.hash = (video_id);
+	},
+	populateOrderPage: function () {
+		overrideScroll = true; //hang the scroll function so no errors appear in the console
+		$(".page:not('#account-page')").hide();
+		$("#account-page").slideDown();
+		
+		var a = accountData.urlkey_list.split(",");
+		$.each(a, function(key, value) {
+			var d = webinarActions.getInfo(value);
+			$(".fill-in-expiration-fromnow").html(moment(accountData.expiration).fromNow());
+			$(".fill-in-expiration-date").html(accountData.expiration);
+			$(".account-order-list").append('<button class="list-group-item account-list-item"><h4 class="list-group-item-heading">' + d.title + '</h4><strong><h5 class="list-group-item-heading">http://www.associatedemployers.org/training/webinars/#' + value + '</h5></strong><p class="list-group-item-text">' + d.description + '</p><label class="hidden-label list-uniqidlbl">' + value + '</label></button>');
+		});
+		hashChange = true;
+		window.location.hash = ("order");
+	},
+	clearPages: function (p) {
+		if(p == "order") {
+			$(".account-order-list").empty();
+		} else if(p == "video") {
+			$("#video-page").empty();
+		}
+	}
+}
+
+function updateHashVars() {
+	console.log("Updating hash vars");
+	lochash = (window.location.hash) ? window.location.hash : null;
+	nohashloc = (lochash) ? lochash.replace('#','') : null;
+	console.log(lochash);
+	checkHash();
+}
+
+function checkHash() {
+	lochash = (window.location.hash) ? window.location.hash : null;
+	nohashloc = (lochash) ? lochash.replace('#','') : null;
+	console.log("Checking hash");
+	if(!lochash) {
+		console.log("hash is null");
+		overrideScroll = false;
+		$("#webinar-list").slideDown();
+	} else if(lochash == "#order") {
+		console.log("hash is order");
+		overrideScroll = true; //hang the scroll function so no errors appear in the console
+		if(accountData) {
+			console.log("account data present");
+			account.populateOrderPage();
+		} else {
+			login.removeCloses(); //remove the close btns on the modal so user must login to close modal
+			login.showModal();
+		}
+	} else {
+		console.log("hash is not order");
+		overrideScroll = true; //hang the scroll function so no errors appear in the console
+		if(accountData) {
+			console.log("account data present");
+			console.log(nohashloc);
+			account.populateVideoPage(nohashloc);
+		} else {
+			login.showModal(); //prepare the login modal
+			login.removeCloses(); //remove the close btns on the modal so user must login to close modal
+		}
+	}	
+}
+
+var webinarActions = {
+	getInfo: function (urlkey) {
+		var results;
+		$.ajax({
+			url: $(".ajaxlocation-webinarinformation").html(),
+			dataType: "json",
+			type: "GET",
+			async: false, //wait for function to complete before returning value
+			data: {
+				'urlkey': urlkey
+			},
+			success: function(data) {
+				if(data) {
+					results = data;
+				}
+			}
+		});
+		return results; //return the data
+	}
+}
+
+var login = {
+	showModal: function () {
+		$("#loginModal").appendTo("body").modal("show");
+	},
+	hideModal: function () {
+		$("#loginModal").modal("hide");
+	},
+	process: function () {
+		login.disableFields();
+		var data = login.validateLogin();
+		if(data) {
+			if(data.urlkey_list) {
+				if(moment(data.expiration).isAfter()) { //use moment.js to check and see if expiration is before the current time. INFO: isAfter() returns current time.
+					if(nohashloc !== "order" && lochash) {
+						console.log("hash: " + nohashloc);
+						var regex = new RegExp('\\s'+nohashloc+'\\s');
+						var d = " " + data.urlkey_list.toString().replace(/,/g, " ") + " ";
+						if(regex.test(d)) { //make sure the url they are trying to access is in their list
+							login.checkExpirationLoop();
+							login.hideModal();
+							login.clearError();
+							accountData = data;
+							account.populateVideoPage(nohashloc);
+						} else {
+							login.error("You do not have access to the url you tried to view or the url does not exist. Please check the url and try again. If you believe this message is in error, please <a href='http://www.associatedemployers.org/contact-us/'>contact us</a>.");
+						}
+					} else {
+						login.checkExpirationLoop();
+						login.hideModal();
+						login.clearError();
+						accountData = data;
+						account.populateOrderPage();
+					}
+				} else {
+					login.error("Your order has expired and is no longer available.");
+				}
+			} else {
+				login.error("Invalid login information.");
+			}
+		} else {
+			login.error("Please complete all fields before attempting to login.");
+		}
+	},
+	validateLogin: function () {
+		//inline validation
+		var qe = false;
+		$(".login-inputs").removeClass("invalid");
+		if(!emailValidation("#login-email")) {
+			$("#login-email").addClass("invalid");
+			qe = true;
+		}
+		if(!$("#login-passkey").val()) {
+			$("#login-passkey").addClass("invalid");
+			qe = true;
+		}
+		if(qe) {
+			return false;	
+		}
+		// end inline validation
+		
+		var results;
+		$.ajax({
+			url: $(".ajaxlocation-validatelogin").html(),
+			dataType: "json",
+			type: "POST",
+			async: false, //wait for function to complete before returning value
+			data: {
+				'email': $("#login-email").val(),
+				'passkey': $("#login-passkey").val()
+			},
+			success: function(data) {
+				results = data;	
+			}
+		});
+		return results;
+	},
+	disableFields: function () {
+		$(".login-inputs").prop("disabled",true);
+	},
+	enableFields: function () {
+		$(".login-inputs").prop("disabled",false);
+	},
+	error: function (msg) {
+		$(".login-message").html(msg).show();
+		login.enableFields();
+	},
+	clearError: function () {
+		login.enableFields();
+		$(".login-message").empty().hide();
+	},
+	removeCloses: function () {
+		$(".login-close").remove();
+	},
+	checkExpirationLoop: function () {
+		setInterval(function() {
+			if(moment().isAfter(accountData.expiration)) {
+				location.reload(true);
+			}
+		}, 1800000); //check expiration every 30 minutes to prevent loitering
+	}
 }
 
 function appendError(msg,rewrite) {
@@ -69,7 +272,7 @@ function appendError(msg,rewrite) {
 
 function webinarClickEvent(x) { //handle add to cart event
 	if(!cart) { //check to see if cart is null.
-		if(!$("#cart").is(":visible")) {cartToggle()} //if its null, show it, as it hasn't been shown yet.
+		if(!$("#cart").is(":visible")) {cartToggle(); cartBtnToggle()} //if its null, show it, as it hasn't been shown yet.
 		cart = { }; //set it as an object or "associative array"
 	} //continue function
 	if(x.hasClass("added")) {
@@ -158,10 +361,11 @@ function updateCartTotal() {
 }
 
 function cartToggle() {
-	$("#toggleCart").toggleClass('active');
-	$("#cart").toggle();
+	$("#cart").toggle()
 }
-
+function cartBtnToggle() {
+	$("#toggleCart").toggleClass('active')	
+}
 function searchForWebinar(v) { //live search function
 	$(".webinar-list-item").hide();	//hide while getting results
 	console.log("running search with value: " + v);
@@ -224,7 +428,7 @@ function checkout () { //checkout function to provide directions to the checkout
 					setTimeout(function() {
 						var c = checkoutController.addOrder(b.payment_id);
 						if(c.passkey) {
-							checkoutController.status("Order has been created. Sending email...");
+							checkoutController.status(90, "Order has been created. Sending email...");
 							setTimeout(function() {
 								passkey = c.passkey;
 								transactionidgbl = b.payment_id;
@@ -439,6 +643,7 @@ var checkoutController = {
 		emptyCart();
 		updateCartTotal();
 		cartToggle();
+		cartBtnToggle();
 		$("#successModal").find(".fill-in-name").html($("#pmt-cc-first-name").val());
 		$("#successModal").find(".fill-in-expiration").html(moment().add('days', 90).format("YYYY/MM/DD"));
 		$("#successModal").appendTo("body").modal("show");
