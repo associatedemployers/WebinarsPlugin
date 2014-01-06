@@ -67,6 +67,7 @@ function save_item($values, $file) {
 		$attachment = wp_handle_upload($tempfile, $upload_overrides);
 		$url = $attachment;
 	}
+	
 	$urlkey =       uniqid('',TRUE);
 	$urlkey =       str_replace(".","",$urlkey); //unique id with more_entropy enabled -- removes "." from more entropy
 	$id =			$values['id'];
@@ -75,7 +76,15 @@ function save_item($values, $file) {
 	$duration =		$values['duration'];
 	$price =		$values['price'];
 	$memberprice =  $values['memberprice'];
-
+	
+	//ffmpeg vars
+	$upload_dir = wp_upload_dir();
+	$video = $url;
+	$thumbnail = $upload_dir['baseurl'] . "/" . $urlkey . ".jpg";
+	
+	//ffmpeg execution here
+	exec("ffmpeg -i $video -deinterlace -an -ss 1 -t 00:00:01 -r 1 -y -vcodec mjpeg -f mjpeg $thumbnail 2>&1");
+	
 	//Setup data for database insert
 	if($id) {
 		$sql = "UPDATE " . $webgrain2->first_menu_table . "
