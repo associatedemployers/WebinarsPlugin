@@ -49,6 +49,40 @@ function render_list_table(){
 /*********************SAVE ITEM******************/
 /****************************************************/
 function save_item($values, $file) {
+	/**
+	 * ExtractThumb, extracts a thumbnail from a video
+	 *
+	 * This function loads a video and extracts an image from a frame 4 
+	 * seconds into the clip
+	 * @param $in string the input path to the video being processed
+	 * @param $out string the path where the output image is saved
+	 */
+	function ExtractThumb($in, $out) {
+		$thumb_stdout;
+		$errors;
+		$retval = 0;
+		// Delete the file if it already exists
+		if (file_exists($out)) { unlink($out); }
+		// Use ffmpeg to generate a thumbnail from the movie
+		$cmd = "ffmpeg -i $in -ss 00:00:01 -f image2 -vframes 1 -s 300x200 $out";
+		exec($cmd, $thumb_stdout, $retval);
+		// Queue up the error for processing
+		if ($retval != 0) { $errors[] = "FFMPEG thumbnail generation failed"; }
+		if (!empty($thumb_stdout)) {
+			foreach ($thumb_stdout as $line) {
+				echo $line . "\n";
+			}
+		}
+		if (!empty($errors)) {
+			foreach ($errors as $error) {
+				echo $error . "\n";
+			}
+			echo $out . "\n";
+			echo $in . "\n";
+		} else {
+			echo "Thumbnail Generated Successfully <br />";	
+		}
+	}
 	require_once(ABSPATH . "wp-admin" . '/includes/image.php');
 	require_once(ABSPATH . "wp-admin" . '/includes/file.php');
 	require_once(ABSPATH . "wp-admin" . '/includes/media.php');
@@ -65,7 +99,7 @@ function save_item($values, $file) {
 		// required for wp_handle_upload() to upload the file
 		$upload_overrides = array( 'test_form' => FALSE );
 		$attachment = wp_handle_upload($tempfile, $upload_overrides);
-		$url = $attachment;
+		$url = $attachment['url'];
 	}
 	
 	$urlkey =       uniqid('',TRUE);
@@ -80,10 +114,10 @@ function save_item($values, $file) {
 	//ffmpeg vars
 	$upload_dir = wp_upload_dir();
 	$video = $url;
-	$thumbnail = $upload_dir['baseurl'] . "/" . $urlkey . ".jpg";
+	$thumbnail = $upload_dir['basedir'] . "/webinar-thumbnails/" . $urlkey . ".png";
 	
 	//ffmpeg execution here
-	exec("ffmpeg -i $video -deinterlace -an -ss 1 -t 00:00:01 -r 1 -y -vcodec mjpeg -f mjpeg $thumbnail 2>&1");
+	ExtractThumb($video, $thumbnail);
 	
 	//Setup data for database insert
 	if($id) {
@@ -91,12 +125,14 @@ function save_item($values, $file) {
 		SET title = '$title', description = '$description', url = '$url', duration = '$duration', price = '$price', member_price = $memberprice
 		WHERE id = $id";
 		$wpdb->query($wpdb->prepare($sql, 0));
+		echo "Updated Webinar! <br />";	
 	} else {
 		$sql = "INSERT INTO " . $webgrain2->first_menu_table . " 
 		(title, description, url, duration, price, urlkey, member_price) VALUES 
 		('$title', '$description', '$url', '$duration', '$price', '$urlkey', $memberprice)";
 		$wpdb->query($wpdb->prepare($sql, 0));
 		$id = $wpdb->insert_id;
+		echo "Created Webinar! <br />";	
 	}
 }
 
