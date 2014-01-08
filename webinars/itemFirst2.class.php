@@ -121,18 +121,23 @@ function save_item($values, $file) {
 	
 	//Setup data for database insert
 	if($id) {
-		$sql = "UPDATE " . $webgrain2->first_menu_table . "
-		SET title = '$title', description = '$description', url = '$url', duration = '$duration', price = '$price', member_price = $memberprice
-		WHERE id = $id";
-		$wpdb->query($wpdb->prepare($sql, 0));
+		$sql = $wpdb->prepare("UPDATE " . $webgrain2->first_menu_table . " SET title = '$title', description = '$description', url = '$url', duration = '$duration', price = '$price', member_price = '$memberprice' WHERE id = '$id'", 0);
+		$wpdb->query($sql, 0);
 		echo "Updated Webinar! <br />";	
 	} else {
-		$sql = "INSERT INTO " . $webgrain2->first_menu_table . " 
-		(title, description, url, duration, price, urlkey, member_price) VALUES 
-		('$title', '$description', '$url', '$duration', '$price', '$urlkey', $memberprice)";
-		$wpdb->query($wpdb->prepare($sql, 0));
+		$sql = $wpdb->prepare("INSERT INTO " . $webgrain2->first_menu_table . " (title, description, url, duration, price, urlkey, member_price) VALUES ('$title', '$description', '$url', '$duration', '$price', '$urlkey', '$memberprice')", 0);
+		if (!$wpdb->query($sql)) {
+			echo "Last Query Ran: " . $wpdb->last_query . "<br />";
+			echo "Query String: " . $sql . "<br />";
+			echo "Last SQL Error: " . $wpdb->last_error . "<br />";
+			echo "Failed to Create Webinar! <br />";
+		} else {
+			$wpdb->print_error();
+			echo "Created Webinar! <br />";	
+		}
+		
 		$id = $wpdb->insert_id;
-		echo "Created Webinar! <br />";	
+		
 	}
 }
 
