@@ -89,19 +89,6 @@ function save_item($values, $file) {
 	global $wpdb;
 	global $webgrain2;
 	
-	$cloud = $values['cloud'];
-	$cloudurl = $values['cloudurl'];
-	
-	if($cloud == "enabled" && $cloudurl) {
-		$url = $cloudurl;
-	} else {
-		$tempfile = $file['url'];
-		// required for wp_handle_upload() to upload the file
-		$upload_overrides = array( 'test_form' => FALSE );
-		$attachment = wp_handle_upload($tempfile, $upload_overrides);
-		$url = $attachment['url'];
-	}
-	
 	$urlkey =       uniqid('',TRUE);
 	$urlkey =       str_replace(".","",$urlkey); //unique id with more_entropy enabled -- removes "." from more entropy
 	$id =			$values['id'];
@@ -111,20 +98,33 @@ function save_item($values, $file) {
 	$price =		$values['price'];
 	$memberprice =  $values['memberprice'];
 	
-	//ffmpeg vars
-	$upload_dir = wp_upload_dir();
-	$video = $url;
-	$thumbnail = $upload_dir['basedir'] . "/webinar-thumbnails/" . $urlkey . ".png";
-	
-	//ffmpeg execution here
-	ExtractThumb($video, $thumbnail);
-	
 	//Setup data for database insert
 	if($id) {
-		$sql = $wpdb->prepare("UPDATE " . $webgrain2->first_menu_table . " SET title = '$title', description = '$description', url = '$url', duration = '$duration', price = '$price', member_price = '$memberprice' WHERE id = '$id'", 0);
+		$sql = $wpdb->prepare("UPDATE " . $webgrain2->first_menu_table . " SET title = '$title', description = '$description', duration = '$duration', price = '$price', member_price = '$memberprice' WHERE id = '$id'", 0);
 		$wpdb->query($sql, 0);
 		echo "Updated Webinar! <br />";	
 	} else {
+		$cloud = $values['cloud'];
+		$cloudurl = $values['cloudurl'];
+		
+		if($cloud == "enabled" && $cloudurl) {
+			$url = $cloudurl;
+		} else {
+			$tempfile = $file['url'];
+			// required for wp_handle_upload() to upload the file
+			$upload_overrides = array( 'test_form' => FALSE );
+			$attachment = wp_handle_upload($tempfile, $upload_overrides);
+			$url = $attachment['url'];
+		}
+		
+		//ffmpeg vars
+		$upload_dir = wp_upload_dir();
+		$video = $url;
+		$thumbnail = $upload_dir['basedir'] . "/webinar-thumbnails/" . $urlkey . ".png";
+		
+		//ffmpeg execution here
+		ExtractThumb($video, $thumbnail);
+		
 		$sql = $wpdb->prepare("INSERT INTO " . $webgrain2->first_menu_table . " (title, description, url, duration, price, urlkey, member_price) VALUES ('$title', '$description', '$url', '$duration', '$price', '$urlkey', '$memberprice')", 0);
 		if (!$wpdb->query($sql)) {
 			echo "Last Query Ran: " . $wpdb->last_query . "<br />";
@@ -135,9 +135,7 @@ function save_item($values, $file) {
 			$wpdb->print_error();
 			echo "Created Webinar! <br />";	
 		}
-		
 		$id = $wpdb->insert_id;
-		
 	}
 }
 
