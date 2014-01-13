@@ -129,17 +129,18 @@ function save_item($values) {
 	$orderinfo = $values['orderinfo'];
 	$webinarpass = $values['webinarpass'];
 	$transaction_id = "Manual Order";
+	$company = $values['company'];
 
 	//Setup data for database insert
 	if($id) {
 		$sql = "UPDATE " . $webgrain2->second_menu_table . " SET 
-		email = '$email', total = '$total', accesstourlkey = '$accesstourlkey', expiration = '$expiration', orderinfo = '$orderinfo', webinarpass = '$webinarpass'
+		email = '$email', total = '$total', accesstourlkey = '$accesstourlkey', expiration = '$expiration', orderinfo = '$orderinfo', webinarpass = '$webinarpass', company = '$company'
 		WHERE id = $id";
 		$wpdb->query($wpdb->prepare($sql, 0));
 	} else {
 		$sql = "INSERT INTO " . $webgrain2->second_menu_table . " 
-		(email, total, accesstourlkey, expiration, orderinfo, webinarpass, transaction_id) VALUES 
-		('$email', '$total', '$accesstourlkey', '$expiration', '$orderinfo', '$webinarpass', '$transaction_id')";
+		(email, total, accesstourlkey, expiration, orderinfo, webinarpass, transaction_id, company) VALUES 
+		('$email', '$total', '$accesstourlkey', '$expiration', '$orderinfo', '$webinarpass', '$transaction_id', '$company')";
 		$wpdb->query($wpdb->prepare($sql, 0));
 		$id = $wpdb->insert_id;
 	}

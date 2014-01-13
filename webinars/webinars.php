@@ -95,6 +95,7 @@ function webinars_install () {
 	total varchar(255) NOT NULL,
 	orderinfo varchar(255) NOT NULL,
 	webinarpass varchar(255) NOT NULL,
+	company varchar(255),
 	UNIQUE KEY id (id)
 	);";
 

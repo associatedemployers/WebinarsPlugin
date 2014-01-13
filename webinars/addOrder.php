@@ -10,6 +10,7 @@
 	$email = $_POST['email'];
 	$total = $_POST['total'];
 	$orderinfo = $_POST['order_info'];
+	$company = $_POST['company'];
 	/* end ajax vars */
 	
 	$webinarpass = generateKey(); //generated var
@@ -22,7 +23,7 @@
 	
 	//sql strings
 	$table_name = $wpdb->prefix . "webinar_code";
-	$sql = $wpdb->prepare("INSERT INTO " . $table_name . "(email, total, accesstourlkey, expiration, orderinfo, webinarpass, transaction_id) VALUES ('$email', '$total', '$items', '$expiration', '$orderinfo', '$webinarpass', '$transaction_id')");
+	$sql = $wpdb->prepare("INSERT INTO " . $table_name . "(email, total, accesstourlkey, expiration, orderinfo, webinarpass, transaction_id, company) VALUES ('$email', '$total', '$items', '$expiration', '$orderinfo', '$webinarpass', '$transaction_id', '$company')");
 	
 	//run the sql queries
 	$insertOrder = $wpdb->query($sql);

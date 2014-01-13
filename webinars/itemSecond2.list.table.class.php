@@ -9,7 +9,7 @@ if(!class_exists('WP_List_Table')) { require_once(ABSPATH . 'wp-admin/includes/c
 class itemSecond_table2 extends WP_List_Table { 
 	function get_columns(){ 
 		//MODIFY: Add in column names you want to display
-		return array('id' => 'ID', 'orderinfo' => 'Customer Information', 'transaction_id' => 'Paypal Transaction ID', 'email' => 'Email Address', 'expiration' => 'Access Expiration', 'accesstourlkey' => 'Order Access URLs', 'webinarpass' => 'Webinars Passkey', 'total' => 'Order Total');
+		return array('id' => 'ID', 'orderinfo' => 'Customer Information', 'company' => 'Company', 'transaction_id' => 'Paypal Transaction ID', 'email' => 'Email Address', 'expiration' => 'Access Expiration', 'accesstourlkey' => 'Order Access URLs', 'webinarpass' => 'Webinars Passkey', 'total' => 'Order Total');
 	}
 
 
@@ -37,6 +37,7 @@ class itemSecond_table2 extends WP_List_Table {
 			$term = $_POST['s'];
 			$search = " WHERE id LIKE '%$term%' 
 								OR orderinfo LIKE '%$term%'
+								OR company LIKE '%$term%'
 								OR transaction_id LIKE '%$term%'
 								OR accesstourlkey LIKE '%$term%'
 								OR webinarpass LIKE '%$term%'
@@ -52,6 +53,7 @@ class itemSecond_table2 extends WP_List_Table {
 			//MODIFY: Setup data for row insert. Add new columns if needed or do sub queries here
 			$id = $r->id;
 			$orderinfo = $r->orderinfo;
+			$company = $r->company;
 			$transaction_id = $r->transaction_id;
 			$email = $r->email;
 			$expiration = $r->expiration;
@@ -59,7 +61,7 @@ class itemSecond_table2 extends WP_List_Table {
 			$webinarpass = $r->webinarpass;
 			$total = $r->total;
 
-			$data_array = array('id' => $id, 'orderinfo' => $orderinfo, 'transaction_id' => $transaction_id, 'email' => $email, 'expiration' => $expiration, 'accesstourlkey' => $accesstourlkey, 'webinarpass' => $webinarpass, 'total' => $total);
+			$data_array = array('id' => $id, 'orderinfo' => $orderinfo, 'company' => $company, 'transaction_id' => $transaction_id, 'email' => $email, 'expiration' => $expiration, 'accesstourlkey' => $accesstourlkey, 'webinarpass' => $webinarpass, 'total' => $total);
 			array_push($column_array, $data_array);
 		}
 
@@ -71,6 +73,7 @@ class itemSecond_table2 extends WP_List_Table {
 		//MODIFY: Add columns that are sortable
 		$sortable_columns = array(
 			'id' => array('id', false),
+			'company' => array('company', false),
 			'transaction_id' => array('transaction_id', false),
 			'email' => array('email', false),
 			'expiration' => array('expiration', false),
@@ -103,6 +106,8 @@ class itemSecond_table2 extends WP_List_Table {
 		switch($column_name) {
 			case 'id':
 			case 'orderinfo':
+				return $item[$column_name];
+			case 'company':
 				return $item[$column_name];
 			case 'transaction_id':
 				return $item[$column_name];
