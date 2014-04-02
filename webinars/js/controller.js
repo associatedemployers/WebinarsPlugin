@@ -18,7 +18,6 @@ var accountData;
 var hashChange;
 
 $(document).ready(function() {
-	ajaxStatus.hideit();
 	$(".footerBg").removeClass("sbar");
 	checkoutController.hideStatus();
 	$(".memberpriceelement").tooltip({title: "AE member price is applied after entering your email in the checkout process"});
@@ -574,8 +573,9 @@ var checkoutController = {
 						error = true;
 					}
 				} else if(type == "street") {
-					var regex2 = /^(\d{3,})\s?(\w{0,5})\s([a-zA-Z]{2,30})\s([a-zA-Z]{2,15})\.?\s?(\w{0,5})$/;
-					if(!regex2.test(v)) {
+					var regex2 = /^(\d{1,})\s?(\w{0,5})\s([a-zA-Z0-9]{2,30})\s([a-zA-Z]{2,15})\.?\s?(\w{0,5})$/;
+					var regex22 = new RegExp('\\b[p]*(ost)*\\.*\\s*[o|0]*(ffice)*\\.*\\s*b[o|0]x\\b', 'i');
+					if(!regex2.test(v) && !v.match(regex22)) {
 						validationStack += "Please enter a valid Street Address.<br/>";
 						error = true;	
 					}
@@ -634,7 +634,8 @@ var checkoutController = {
 				'transaction_id': transact_id,
 				'email': $("#pmt-email").val(),
 				'total': amtTotal,
-				'order_info': $("#pmt-cc-first-name").val() + " " + $("#pmt-cc-last-name").val() + "\n" + $("#pmt-address-line1").val() + " " + $("#pmt-address-line2").val() + "\n" + $("#pmt-address-city").val() + ", " + $("#pmt-address-state").val() + " " + $("#pmt-address-zipcode").val() + "\n"
+				'order_info': $("#pmt-cc-first-name").val() + " " + $("#pmt-cc-last-name").val() + "\n" + $("#pmt-address-line1").val() + " " + $("#pmt-address-line2").val() + "\n" + $("#pmt-address-city").val() + ", " + $("#pmt-address-state").val() + " " + $("#pmt-address-zipcode").val() + "\n",
+				'company': $("#pmt-company").val()
 			},
 			success: function(data) {
 				results = data;
@@ -755,3 +756,163 @@ function isAEMember(v) {
 	});
 	return results;
 }
+
+/* Placeholders.js v3.0.2 */
+(function(t){"use strict";function e(t,e,r){return t.addEventListener?t.addEventListener(e,r,!1):t.attachEvent?t.attachEvent("on"+e,r):void 0}function r(t,e){var r,n;for(r=0,n=t.length;n>r;r++)if(t[r]===e)return!0;return!1}function n(t,e){var r;t.createTextRange?(r=t.createTextRange(),r.move("character",e),r.select()):t.selectionStart&&(t.focus(),t.setSelectionRange(e,e))}function a(t,e){try{return t.type=e,!0}catch(r){return!1}}t.Placeholders={Utils:{addEventListener:e,inArray:r,moveCaret:n,changeType:a}}})(this),function(t){"use strict";function e(){}function r(){try{return document.activeElement}catch(t){}}function n(t,e){var r,n,a=!!e&&t.value!==e,u=t.value===t.getAttribute(V);return(a||u)&&"true"===t.getAttribute(P)?(t.removeAttribute(P),t.value=t.value.replace(t.getAttribute(V),""),t.className=t.className.replace(R,""),n=t.getAttribute(z),parseInt(n,10)>=0&&(t.setAttribute("maxLength",n),t.removeAttribute(z)),r=t.getAttribute(D),r&&(t.type=r),!0):!1}function a(t){var e,r,n=t.getAttribute(V);return""===t.value&&n?(t.setAttribute(P,"true"),t.value=n,t.className+=" "+I,r=t.getAttribute(z),r||(t.setAttribute(z,t.maxLength),t.removeAttribute("maxLength")),e=t.getAttribute(D),e?t.type="text":"password"===t.type&&K.changeType(t,"text")&&t.setAttribute(D,"password"),!0):!1}function u(t,e){var r,n,a,u,i,l,o;if(t&&t.getAttribute(V))e(t);else for(a=t?t.getElementsByTagName("input"):f,u=t?t.getElementsByTagName("textarea"):h,r=a?a.length:0,n=u?u.length:0,o=0,l=r+n;l>o;o++)i=r>o?a[o]:u[o-r],e(i)}function i(t){u(t,n)}function l(t){u(t,a)}function o(t){return function(){b&&t.value===t.getAttribute(V)&&"true"===t.getAttribute(P)?K.moveCaret(t,0):n(t)}}function c(t){return function(){a(t)}}function s(t){return function(e){return A=t.value,"true"===t.getAttribute(P)&&A===t.getAttribute(V)&&K.inArray(C,e.keyCode)?(e.preventDefault&&e.preventDefault(),!1):void 0}}function d(t){return function(){n(t,A),""===t.value&&(t.blur(),K.moveCaret(t,0))}}function v(t){return function(){t===r()&&t.value===t.getAttribute(V)&&"true"===t.getAttribute(P)&&K.moveCaret(t,0)}}function g(t){return function(){i(t)}}function p(t){t.form&&(T=t.form,"string"==typeof T&&(T=document.getElementById(T)),T.getAttribute(U)||(K.addEventListener(T,"submit",g(T)),T.setAttribute(U,"true"))),K.addEventListener(t,"focus",o(t)),K.addEventListener(t,"blur",c(t)),b&&(K.addEventListener(t,"keydown",s(t)),K.addEventListener(t,"keyup",d(t)),K.addEventListener(t,"click",v(t))),t.setAttribute(j,"true"),t.setAttribute(V,x),(b||t!==r())&&a(t)}var f,h,b,m,A,y,E,x,L,T,S,N,w,B=["text","search","url","tel","email","password","number","textarea"],C=[27,33,34,35,36,37,38,39,40,8,46],k="#ccc",I="placeholdersjs",R=RegExp("(?:^|\\s)"+I+"(?!\\S)"),V="data-placeholder-value",P="data-placeholder-active",D="data-placeholder-type",U="data-placeholder-submit",j="data-placeholder-bound",q="data-placeholder-focus",Q="data-placeholder-live",z="data-placeholder-maxlength",F=document.createElement("input"),G=document.getElementsByTagName("head")[0],H=document.documentElement,J=t.Placeholders,K=J.Utils;if(J.nativeSupport=void 0!==F.placeholder,!J.nativeSupport){for(f=document.getElementsByTagName("input"),h=document.getElementsByTagName("textarea"),b="false"===H.getAttribute(q),m="false"!==H.getAttribute(Q),y=document.createElement("style"),y.type="text/css",E=document.createTextNode("."+I+" { color:"+k+"; }"),y.styleSheet?y.styleSheet.cssText=E.nodeValue:y.appendChild(E),G.insertBefore(y,G.firstChild),w=0,N=f.length+h.length;N>w;w++)S=f.length>w?f[w]:h[w-f.length],x=S.attributes.placeholder,x&&(x=x.nodeValue,x&&K.inArray(B,S.type)&&p(S));L=setInterval(function(){for(w=0,N=f.length+h.length;N>w;w++)S=f.length>w?f[w]:h[w-f.length],x=S.attributes.placeholder,x?(x=x.nodeValue,x&&K.inArray(B,S.type)&&(S.getAttribute(j)||p(S),(x!==S.getAttribute(V)||"password"===S.type&&!S.getAttribute(D))&&("password"===S.type&&!S.getAttribute(D)&&K.changeType(S,"text")&&S.setAttribute(D,"password"),S.value===S.getAttribute(V)&&(S.value=x),S.setAttribute(V,x)))):S.getAttribute(P)&&(n(S),S.removeAttribute(V));m||clearInterval(L)},100)}K.addEventListener(t,"beforeunload",function(){J.disable()}),J.disable=J.nativeSupport?e:i,J.enable=J.nativeSupport?e:l}(this),function(t){"use strict";var e=t.fn.val,r=t.fn.prop;Placeholders.nativeSupport||(t.fn.val=function(t){var r=e.apply(this,arguments),n=this.eq(0).data("placeholder-value");return void 0===t&&this.eq(0).data("placeholder-active")&&r===n?"":r},t.fn.prop=function(t,e){return void 0===e&&this.eq(0).data("placeholder-active")&&"value"===t?"":r.apply(this,arguments)})}(jQuery);
+
+$.fn.validateCreditCard = function(callback, options) {
+	var $, __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+	$ = jQuery;
+    var card, card_type, card_types, get_card_type, is_valid_length, is_valid_luhn, normalize, validate, validate_number, _i, _len, _ref, _ref1;
+    card_types = [
+      {
+        name: 'amex',
+        pattern: /^3[47]/,
+        valid_length: [15]
+      }, {
+        name: 'diners_club_carte_blanche',
+        pattern: /^30[0-5]/,
+        valid_length: [14]
+      }, {
+        name: 'diners_club_international',
+        pattern: /^36/,
+        valid_length: [14]
+      }, {
+        name: 'jcb',
+        pattern: /^35(2[89]|[3-8][0-9])/,
+        valid_length: [16]
+      }, {
+        name: 'laser',
+        pattern: /^(6304|670[69]|6771)/,
+        valid_length: [16, 17, 18, 19]
+      }, {
+        name: 'visa_electron',
+        pattern: /^(4026|417500|4508|4844|491(3|7))/,
+        valid_length: [16]
+      }, {
+        name: 'visa',
+        pattern: /^4/,
+        valid_length: [16]
+      }, {
+        name: 'mastercard',
+        pattern: /^5[1-5]/,
+        valid_length: [16]
+      }, {
+        name: 'maestro',
+        pattern: /^(5018|5020|5038|6304|6759|676[1-3])/,
+        valid_length: [12, 13, 14, 15, 16, 17, 18, 19]
+      }, {
+        name: 'discover',
+        pattern: /^(6011|622(12[6-9]|1[3-9][0-9]|[2-8][0-9]{2}|9[0-1][0-9]|92[0-5]|64[4-9])|65)/,
+        valid_length: [16]
+      }
+    ];
+    if (options == null) {
+      options = {};
+    }
+    if ((_ref = options.accept) == null) {
+      options.accept = (function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = card_types.length; _i < _len; _i++) {
+          card = card_types[_i];
+          _results.push(card.name);
+        }
+        return _results;
+      })();
+    }
+    _ref1 = options.accept;
+    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+      card_type = _ref1[_i];
+      if (__indexOf.call((function() {
+        var _j, _len1, _results;
+        _results = [];
+        for (_j = 0, _len1 = card_types.length; _j < _len1; _j++) {
+          card = card_types[_j];
+          _results.push(card.name);
+        }
+        return _results;
+      })(), card_type) < 0) {
+        throw "Credit card type '" + card_type + "' is not supported";
+      }
+    }
+    get_card_type = function(number) {
+      var _j, _len1, _ref2;
+      _ref2 = (function() {
+        var _k, _len1, _ref2, _results;
+        _results = [];
+        for (_k = 0, _len1 = card_types.length; _k < _len1; _k++) {
+          card = card_types[_k];
+          if (_ref2 = card.name, __indexOf.call(options.accept, _ref2) >= 0) {
+            _results.push(card);
+          }
+        }
+        return _results;
+      })();
+      for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+        card_type = _ref2[_j];
+        if (number.match(card_type.pattern)) {
+          return card_type;
+        }
+      }
+      return null;
+    };
+    is_valid_luhn = function(number) {
+      var digit, n, sum, _j, _len1, _ref2;
+      sum = 0;
+      _ref2 = number.split('').reverse();
+      for (n = _j = 0, _len1 = _ref2.length; _j < _len1; n = ++_j) {
+        digit = _ref2[n];
+        digit = +digit;
+        if (n % 2) {
+          digit *= 2;
+          if (digit < 10) {
+            sum += digit;
+          } else {
+            sum += digit - 9;
+          }
+        } else {
+          sum += digit;
+        }
+      }
+      return sum % 10 === 0;
+    };
+    is_valid_length = function(number, card_type) {
+      var _ref2;
+      return _ref2 = number.length, __indexOf.call(card_type.valid_length, _ref2) >= 0;
+    };
+    validate_number = function(number) {
+      var length_valid, luhn_valid;
+      card_type = get_card_type(number);
+      luhn_valid = false;
+      length_valid = false;
+      if (card_type != null) {
+        luhn_valid = is_valid_luhn(number);
+        length_valid = is_valid_length(number, card_type);
+      }
+      return callback({
+        card_type: card_type,
+        luhn_valid: luhn_valid,
+        length_valid: length_valid
+      });
+    };
+    validate = function() {
+      var number;
+      number = normalize($(this).val());
+      return validate_number(number);
+    };
+    normalize = function(number) {
+      return number.replace(/[ -]/g, '');
+    };
+    this.bind('input', function() {
+      $(this).unbind('keyup');
+      return validate.call(this);
+    });
+    this.bind('keyup', function() {
+      return validate.call(this);
+    });
+    if (this.length !== 0) {
+      validate.call(this);
+    }
+    return this;
+  };

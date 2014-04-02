@@ -9,7 +9,7 @@
 	$table_name = "ae_company"; 
 	$second_table_name = "ae_user"; 
 	$sql = $wpdb->prepare("SELECT company FROM " . $table_name . " WHERE email='". $email ."' and active=0");
-	$sql2 = $wpdb->prepare("SELECT company FROM " . $second_table_name . " WHERE email='". $email ."' and active=0");
+	$sql2 = $wpdb->prepare("SELECT first_name FROM " . $second_table_name . " WHERE email='". $email ."' and active=0");
 	$success = TRUE;
 	
 	//run the sql queries
